@@ -1,4 +1,4 @@
-
+import { useEffect, useState } from 'react';
 import { Trash2, Calendar, MapPin, FileText, Edit, Copy, Gauge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +11,57 @@ interface TransactionListProps {
   onDuplicate: (transaction: FuelTransaction) => void;
 }
 
-const TransactionList = ({ transactions, onDelete, onEdit, onDuplicate }: TransactionListProps) => {
+const TransactionList = ({ transactions: localTransactions, onDelete, onEdit, onDuplicate }: TransactionListProps) => {
+  const [loading, setLoading] = useState(false);
+  const [transactions, setTransactions] = useState(localTransactions);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (localTransactions.length === 0) {
+        setLoading(true);
+        try {
+          const res = await fetch('https://seventoursvietnam.com/rest-api/api/readobject_meta.php?pagenumber=1&limit=10&sortcolumn=&orderby=asc&query=&_=');
+          const data = await res.json();
+          
+          const apiTransactions = data.body
+            .filter(item => item.meta_key === 'fuel')
+            .map(item => {
+              const fuelData = JSON.parse(item.meta_value);
+              return {
+                id: item.meta_id,
+                date: fuelData.date,
+                amount: parseFloat(fuelData.liters),
+                pricePerLiter: fuelData.price_per_liter,
+                totalCost: fuelData.total_cost,
+                lastKmReading: fuelData.last_km,
+                kmReading: fuelData.current_km,
+                location: fuelData.location,
+                notes: fuelData.note
+              };
+            });
+            
+          setTransactions(apiTransactions);
+        } catch (error) {
+          console.error('Error fetching transactions:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchTransactions();
+  }, [localTransactions]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-muted-foreground text-lg mb-2">
+          Đang tải dữ liệu...
+        </div>
+      </div>
+    );
+  }
+
   if (transactions.length === 0) {
     return (
       <div className="text-center py-12">
