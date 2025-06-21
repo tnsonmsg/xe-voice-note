@@ -30,6 +30,58 @@ export interface FuelTransaction {
   lastKmReading?: number;
 }
 
+// Giả sử bạn có biến xác định chế độ người dùng đăng ký (online)
+var isOnlineUser = false; // Thay bằng logic thực tế của bạn
+const savedMode = localStorage.getItem('userMode');
+    //const savedUser = localStorage.getItem('googleUser');
+    
+    if (savedMode === 'registered') {
+      isOnlineUser = true;
+    }
+
+function useEffectOnline(setTransactions: (txs: FuelTransaction[]) => void) {
+  useEffect(() => {
+    if (!isOnlineUser) return;
+    const fetchData = async () => {
+      try {
+        const res = await fetch('https://seventoursvietnam.com/rest-api/api/readobject_meta.php?pagenumber=1&limit=100&sortcolumn=&orderby=asc&query=fuel&_=');
+        const data = await res.json();
+        // Map dữ liệu từ API về FuelTransaction[]
+        
+          
+          const apiTransactions = data.body
+            .filter(item => item.meta_key === 'fuel')
+            .map(item => {
+              const fuelData = JSON.parse(item.meta_value);
+              return {
+                id: item.meta_id,
+                date: fuelData.date,
+                amount: parseFloat(fuelData.liters),
+                pricePerLiter: fuelData.price_per_liter,
+                totalCost: fuelData.total_cost,
+                lastKmReading: fuelData.last_km,
+                kmReading: fuelData.current_km,
+                location: fuelData.location,
+                notes: fuelData.note
+              };
+            });
+        const transactions: FuelTransaction[] = apiTransactions.map(tx => ({
+          ...tx,
+          date: new Date(tx.date).toISOString().split('T')[0], // Định dạng lại ngày
+        }));
+        // Cập nhật state và localStorage
+
+        setTransactions(transactions);
+        localStorage.setItem('fuelTransactions', JSON.stringify(transactions));
+      } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu từ API:', error);
+      }
+    };
+    fetchData();
+    // eslint-disable-next-line
+  }, [setTransactions]);
+}
+
 const Index = () => {
   const [transactions, setTransactions] = useState<FuelTransaction[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +91,10 @@ const Index = () => {
 
   // Load transactions from localStorage
   useEffect(() => {
+    if (isOnlineUser === true) {
+      useEffectOnline(setTransactions);
+      return; // Skip localStorage loading if online user
+    }
     const savedTransactions = localStorage.getItem('fuelTransactions');
     if (savedTransactions) {
       setTransactions(JSON.parse(savedTransactions));
@@ -106,6 +162,8 @@ const Index = () => {
   );
   const averageKmPerTransaction = transactionsWithKm.length > 0 ? 
     totalKmDriven / transactionsWithKm.length : 0;
+
+  useEffectOnline(setTransactions);
 
   return (
     <UserProvider>
