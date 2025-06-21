@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => ({
   //   port: 8080,
   // },
   server: {
+    host: "::",
+    port: 3000,// hoặc 5174, 5175...
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://localhost/tourviet/rest-api/api',
