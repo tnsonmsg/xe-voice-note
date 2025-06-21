@@ -71,28 +71,14 @@ const AddTransactionModal = ({
       note: transaction.notes || ''
     };
 
-    // try {
-    //   const response = await fetch('http://localhost/tourviet/rest-api/api/addobject_meta.php', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //   },
-    //     body: JSON.stringify({
-    //       tokenkey: "1234567890",
-    //       object_id: editingTransaction?.id,
-    //       meta_key: "fuel",
-    //       meta_value: JSON.stringify(metaValue)
-    //     })
-    //   });
-
-    //   if (!response.ok) {
-    //     throw new Error(`HTTP error! status: ${response.status}`);
-    //   }
-    //   const data = await response.json();
-    //   console.log('API Response:', data);
-    // } catch (error) {
-    //   console.error('Error saving fuel meta:', error);
-    // }
+    var idTran = editingTransaction?.id || 'new-transaction-id'; // Use a new ID if not editing
+    if (!editingTransaction || !editingTransaction.id) {
+      //console.error('Editing transaction is not valid or does not have an ID');
+      //return;
+      idTran = 'new-transaction-id'; // Placeholder for new transaction ID
+      idTran = Math.random().toString(36).substring(2, 15); // Generate a random ID for new transactions
+      
+    }
 
     try {
       const response = await fetch('https://seventoursvietnam.com/rest-api/api/addobject_meta.php', {
@@ -102,7 +88,7 @@ const AddTransactionModal = ({
       },
         body: JSON.stringify({
           tokenkey: "1234567890",
-          object_id: editingTransaction?.id,
+          object_id: idTran,
           meta_key: "fuel",
           meta_value: JSON.stringify(metaValue)
         })
@@ -144,7 +130,10 @@ const AddTransactionModal = ({
       await saveFuelMeta(transaction);
       onUpdate(editingTransaction.id, transaction);
     } else {
+      await saveFuelMeta(transaction);
+      // If not editing, generate a new ID (could be a UUID or similar)
       onAdd(transaction);
+      
     }
 
     setFormData({

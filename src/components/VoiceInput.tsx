@@ -54,7 +54,7 @@ const VoiceInput = ({ value, onChange, placeholder, id, type = "text" }: VoiceIn
         placeholder={placeholder}
         className="flex-1"
       />
-      <Button
+      {/* <Button
         type="button"
         variant="outline"
         size="sm"
@@ -62,7 +62,7 @@ const VoiceInput = ({ value, onChange, placeholder, id, type = "text" }: VoiceIn
         className={isListening ? 'bg-red-100 border-red-300' : ''}
       >
         {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-      </Button>
+      </Button> */}
     </div>
   );
 };
